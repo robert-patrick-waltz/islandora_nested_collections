@@ -5,9 +5,12 @@
  */
 
 function islandora_nested_collections_block_info() {
-    $block['islandora_nested_collections'] = array(
+    $block['nested_collections_list'] = array(
         'info' => t('Islandora Nested Collections'),
         'cache' => DRUPAL_NO_CACHE,
+        'status' => TRUE,
+        'region' => 'content',
+        'pages' => 'home',
     );
     return $block;
 }
@@ -16,12 +19,12 @@ function islandora_nested_collections_block_info() {
  * Define what our block is going to look like.
  * Implements hook_block_view().
  */
-function islandora_nested_collections_block_view($block_key) {
+function islandora_nested_collections_block_view($delta = '') {
     $block = array();
     $nodeIndexHash;
 
     // only  define the content of islandora_nested_collections block
-    if($block_key === 'islandora_nested_collections') { 
+    if ($delta === 'nested_collections_list') { 
         //This is the title of the block.
         $root_pid = variable_get('islandora_repository_pid', 'islandora:root');
         $islandoraTuque = new IslandoraTuque();
