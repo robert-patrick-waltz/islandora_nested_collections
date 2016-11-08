@@ -36,7 +36,7 @@ function islandora_nested_collections_block_view($delta = '') {
         }
 
         $subject = $islandora_root_object['objLabel'];
-        $block['subject'] = "t($subject)";
+        $block['subject'] = t($subject);
 
         $structuredCollectionMap =  new StructuredCollectionMap($islandoraTuque);
         $collectionMap = $structuredCollectionMap->getMap();
