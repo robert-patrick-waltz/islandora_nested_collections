@@ -1,0 +1,93 @@
+<?php
+/**
+ * Declare what blocks are provided by this module.
+ * Implements hook_block_info().
+ */
+
+function islandora_nested_collections_block_info() {
+    $block['islandora_nested_collections'] = array(
+        'info' => t('Islandora Nested Collections'),
+        'cache' => DRUPAL_NO_CACHE,
+    );
+    return $block;
+}
+
+/**
+ * Define what our block is going to look like.
+ * Implements hook_block_view().
+ */
+function islandora_nested_collections_block_view($block_key) {
+    $block = array();
+    $nodeIndexHash;
+
+    // only  define the content of islandora_nested_collections block
+    if($block_key === 'islandora_nested_collections') { 
+        //This is the title of the block.
+        $root_pid = variable_get('islandora_repository_pid', 'islandora:root');
+        $islandoraTuque = new IslandoraTuque();
+        $islandora_root_object = $islandoraTuque->repository->api->a->getObjectProfile($root_pid);
+
+        if (!$islandora_root_object) {
+            throw Exception("$root_pid is not found. Can not produce nested collection block!");
+        }
+
+        $subject = $islandora_root_object['objLabel'];
+        $block['subject'] = 't($subject)';
+
+        $structuredCollectionMap =  new StructuredCollectionMap($islandoraTuque);
+        $collectionMap = $structuredCollectionMap->getMap();
+        $pidsList = $collectionMap[$root_pid]['children'];
+        $list = build_nested_collections_list($collectionMap, $pidsList, 0);
+        $block['content'] = join('\n', $list);
+
+    }
+
+    return $block;
+}
+/**
+ * Build out the HTML structure 
+ * Implements hook_block_view().
+ */
+function build_nested_collections_list(array $collectionMap, array $pidsList, $level) {
+    $nestedList = array();
+    $nestedList[] = "<ul class='islandora_nested_collection_$level'>";
+    foreach ($pidsList as $pid) {
+        $label = $collectionMap[$pid]['label'];
+        $pid_path = rawurlencode($pid);
+        $nestedList[] = "<li><a href='/$pid_path'>$label</a></li>";
+        if (isset($collectionMap[$pid]['children'])) {
+            $nestedList = array_merge($nestedList, build_nested_collections_list($collectionMap, $collectionMap[$pid]['children'], $level + 1));
+        }
+    }
+    $nestedList[] = "</ul>";
+    return $nestedList;
+}
+
+class StructuredCollectionMap {
+    
+    private $contentPolicyXMLTemplate = <<<IR_NESTED_QUERY
+SELECT ?pid ?parent ?label WHERE {
+       ?pid <info:fedora/fedora-system:def/model#label> ?label ;
+            <fedora-rels-ext:isMemberOfCollection> ?parent 
+        FILTER regex(str(?pid), ".*utk.*") }
+ORDER BY ?label
+IR_NESTED_QUERY;
+    
+    private $islandoraTuque;
+    public function __construct(IslandoraTuque $islandoraTuque) {
+        $this->islandoraTuque = $islandoraTuque;
+    }
+
+    public function getMap() {
+        $ri_search = $this->islandoraTuque->repository->ri->sparqlQuery($this->contentPolicyXMLTemplate);
+        //Define the block content.
+        $pidIndexHash = array();
+        foreach ($ri_search as $tuple) {
+
+            $pidIndexHash[$tuple['pid']['value']]['label'] = $tuple['label']['value'];
+
+            $pidIndexHash[$tuple['parent']['value']]['children'][] = $tuple['pid']['value'];
+        }
+        return $pidIndexHash;
+    }
+}

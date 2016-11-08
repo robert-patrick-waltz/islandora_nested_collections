@@ -1,0 +1,8 @@
+name = Islandora Nested Collections
+project = islandora_nested_collections
+description = "Displays nested collections in a hierarchical block view."
+package = Islandora Tools
+dependencies[] = islandora
+version = 7.x-dev
+core = 7.x
+files[] = includes/islandora_nested_collections_block.inc
