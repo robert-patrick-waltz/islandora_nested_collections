@@ -46,15 +46,21 @@ function islandora_nested_collections_block_view($block_key) {
 }
 /**
  * Build out the HTML structure 
- * Implements hook_block_view().
+ * The function is recursive
+ * It will build an unordered list based on the $collectionMap provided
+ * assuming the starting place is found in the $pidsList.
+ * So, before calling, the starting pid of the collection should be known.
+ * 
  */
 function build_nested_collections_list(array $collectionMap, array $pidsList, $level) {
     $nestedList = array();
+    // class names should be configurable
     $nestedList[] = "<ul class='islandora_nested_collection_$level'>";
     foreach ($pidsList as $pid) {
         $label = $collectionMap[$pid]['label'];
         $pid_path = rawurlencode($pid);
-        $nestedList[] = "<li><a href='/$pid_path'>$label</a></li>";
+        // the static path of /islandora/object should be configurable
+        $nestedList[] = "<li><a href='/islandora/object/$pid_path'>$label</a></li>";
         if (isset($collectionMap[$pid]['children'])) {
             $nestedList = array_merge($nestedList, build_nested_collections_list($collectionMap, $collectionMap[$pid]['children'], $level + 1));
         }
@@ -78,6 +84,27 @@ IR_NESTED_QUERY;
         $this->islandoraTuque = $islandoraTuque;
     }
 
+    /** 
+     * translate the results of the triple store search to  a map
+     * the key will be the pid of the object found and value will be 
+     * a second map that hold both the title of the object and
+     * any children pids of the object. 
+     * such that a valid structure would be:
+     * Array (
+     *  [utk.ir:abc] => Array
+     *     (
+     *       [children] => Array
+     *         (
+     *           [0] => utk.ir:xyz
+     *         )
+     *       [label] => A B C
+     *     )
+     *   [utk.ir:xyz] => Array
+     *     (
+     *       [label] => X Y Z
+     *     )
+     * )
+     */
     public function getMap() {
         $ri_search = $this->islandoraTuque->repository->ri->sparqlQuery($this->contentPolicyXMLTemplate);
         //Define the block content.
