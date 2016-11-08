@@ -41,7 +41,7 @@ function islandora_nested_collections_block_view($delta = '') {
         $collectionMap = $structuredCollectionMap->getMap();
         $pidsList = $collectionMap[$root_pid]['children'];
         $list = build_nested_collections_list($collectionMap, $pidsList, 0);
-        $block['content'] = join('\n', $list);
+        $block['content'] = join("\n", $list);
 
     }
 
