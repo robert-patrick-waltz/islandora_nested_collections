@@ -79,7 +79,7 @@ class StructuredCollectionMap {
 SELECT ?pid ?parent ?label WHERE {
        ?pid <info:fedora/fedora-system:def/model#label> ?label ;
             <fedora-rels-ext:isMemberOfCollection> ?parent 
-        FILTER regex(str(?pid), ".*utk.*") }
+        FILTER regex(str(?pid), "utk(.ir)?:") }
 ORDER BY ?label
 IR_NESTED_QUERY;
     
