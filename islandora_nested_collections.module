@@ -11,7 +11,7 @@ function islandora_nested_collections_block_info() {
         'status' => TRUE,
         'visibility' => BLOCK_VISIBILITY_LISTED,
         'region' => 'content',
-        'pages' => 'home',
+        'pages' => 'browse',
     );
     return $block;
 }
