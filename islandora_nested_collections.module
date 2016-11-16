@@ -22,6 +22,8 @@ function islandora_nested_collections_block_info() {
  */
 function islandora_nested_collections_block_view($delta = '') {
     $block = array();
+    // XXX The list built by build_nested_collections_list
+    // should be cached
     $nodeIndexHash;
 
     // only  define the content of islandora_nested_collections block
@@ -76,13 +78,14 @@ function build_nested_collections_list(array $collectionMap, array $pidsList, $l
 class StructuredCollectionMap {
     
     private $contentPolicyXMLTemplate = <<<IR_NESTED_QUERY
-SELECT ?pid ?parent ?label WHERE {
-       ?pid <info:fedora/fedora-system:def/model#label> ?label ;
-            <fedora-rels-ext:isMemberOfCollection> ?parent 
-        FILTER regex(str(?pid), "utk(.ir)?:") }
+SELECT  ?parent ?pid  ?label WHERE {
+        ?pid <info:fedora/fedora-system:def/model#label> ?label ;
+             <info:fedora/fedora-system:def/model#hasModel> <info:fedora/islandora:collectionCModel> .
+        optional { ?pid <fedora-rels-ext:isMemberOfCollection> ?parent } 
+FILTER regex(str(?pid), "utk") }
 ORDER BY ?label
 IR_NESTED_QUERY;
-    
+
     private $islandoraTuque;
     public function __construct(IslandoraTuque $islandoraTuque) {
         $this->islandoraTuque = $islandoraTuque;
@@ -113,11 +116,12 @@ IR_NESTED_QUERY;
         $ri_search = $this->islandoraTuque->repository->ri->sparqlQuery($this->contentPolicyXMLTemplate);
         //Define the block content.
         $pidIndexHash = array();
-        foreach ($ri_search as $tuple) {
+        foreach ($ri_search as $resultItem) {
 
-            $pidIndexHash[$tuple['pid']['value']]['label'] = $tuple['label']['value'];
-
-            $pidIndexHash[$tuple['parent']['value']]['children'][] = $tuple['pid']['value'];
+            $pidIndexHash[$resultItem['pid']['value']]['label'] = $resultItem['label']['value'];
+            if (isset ($resultItem['parent']['value'])) {
+                $pidIndexHash[$resultItem['parent']['value']]['children'][] = $resultItem['pid']['value'];
+            }
         }
         return $pidIndexHash;
     }
